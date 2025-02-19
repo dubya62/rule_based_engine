@@ -4,8 +4,11 @@
 typedef struct MatchResult{
     int offset;
     int length;
-    char*** variableBindings;
 
+    // TODO: handle variable bindings
+    int numberOfVariables;
+    int** variableBindingLengths; // number of Variables length
+    char*** variableBindings; // number of Variables length of variableBindings length
 } MatchResult;
 
 typedef struct Matcher{

@@ -10,6 +10,6 @@ Clause* Clause_init(char* clauseString);
 int Clause_createMatcher(Clause* instance);
 
 // Attempt to match tokens to this clause
-MatchResult* Clause_match(Clause* instance, char** tokens, int numberOfTokens);
+MatchResult* Clause_match(Clause* instance, char** tokens, int numberOfTokens, int startOffset);
 
 #endif

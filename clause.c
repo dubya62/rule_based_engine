@@ -413,6 +413,26 @@ int Clause_createMatcher(Clause* instance){
 // TODO: THESE ARE THE MOST PERFORMANCE CRITICAL FUNCTIONS
     // it would be good to come back later and make it more efficient
 
+int tokenMatches(Matcher* matcher, char* token, int currentRepetition){
+    DBG("Checking token match...\n");
+    DBG("\t%d matching tokens\n", matcher->numberOfMatchingTokens[currentRepetition]);
+    DBG("\ttoken to match: %s\n", token);
+    if (matcher->matchingTokens[currentRepetition] == NULL || matcher->numberOfMatchingTokens[currentRepetition] == 0){
+        DBG("TOKEN MATCHES (ANY)\n");
+        return 1;
+    }
+
+    for (int i=0; i<matcher->numberOfMatchingTokens[currentRepetition]; i++){
+        if (!strcmp(matcher->matchingTokens[currentRepetition][i], token)){
+            DBG("TOKEN MATCHES\n");
+            return 1;
+        }
+    }
+
+    DBG("TOKEN DOES NOT MATCH\n");
+    return 0;
+}
+
 // Attempt to match to the start of the given tokens
 MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTokens){
     int currentRepetition = 0;
@@ -425,25 +445,68 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
 
     Matcher* matcher = instance->matcher;
 
+    int wentBack;
+
     while (1){
         // if child fails, increment parent, then check
+        DBG("Matching until reaching min repetitions %d (%d)...\n", currentRepetition, matcher->minRepetitions[currentRepetition]);
+        DBG("latestToken: %d\n", latestToken);
         while (repetitions[currentRepetition] < matcher->minRepetitions[currentRepetition]){
-            if (!tokenMatches){
-                repetitions[currentRepetition] = 0;
-                currentRepetition--;
-                if (currentRepetition < 0){
-                    return NULL;
+            do {
+                DBG("latestToken: %d\n", latestToken);
+                DBG("tokenMatchs(matcher, %s, %d)\n", tokens[latestToken], currentRepetition);
+                wentBack = 0;
+                if (!tokenMatches(matcher, tokens[latestToken], currentRepetition)){
+                    DBG("Going back to the previous repetition...\n");
+
+                    latestToken -= repetitions[currentRepetition];
+                    repetitions[currentRepetition] = 0;
+                    currentRepetition--;
+
+                    wentBack = 1;
+
+                    if (currentRepetition < 0){
+                        DBG("No matches possible %d\n", currentRepetition);
+                        return NULL;
+                    }
+                } 
+                if (wentBack){
+                    DBG("We went back. Reevalutating...\n");
+                } else {
+                    DBG("We did not go back.\n");
+                    repetitions[currentRepetition]++;
+                    latestToken++;
+                    DBG("This token's repetitions++ %d (%d)\n", currentRepetition, repetitions[currentRepetition]);
+                    if (repetitions[currentRepetition] > matcher->maxRepetitions[currentRepetition]){
+                        DBG("Too many repetitions. Going back %d (%d)", currentRepetition, matcher->maxRepetitions[currentRepetition]);
+                        // too many repetitions. go back
+                        latestToken -= repetitions[currentRepetition];
+                        repetitions[currentRepetition] = 0;
+                        currentRepetition--;
+
+                        wentBack = 1;
+
+                        if (currentRepetition < 0){
+                            DBG("No matches possible %d\n", currentRepetition);
+                            return NULL;
+                        }
+                    }
                 }
-            }
-            repetitions[currentRepetition]++;
-            // TODO: need to check the match and fix case when there are too many repetitions here
+            } while (wentBack);
         }
+        DBG("Made it to the minimum number of repetitions %d (%d)...\n", currentRepetition, matcher->minRepetitions[currentRepetition]);
 
         // we have made it to the minimum. go to the child and restart the process for it
+        DBG("Moving to child...\n");
         currentRepetition++;
+        DBG("Child index: %d\tNumber of tokens: %d\n", currentRepetition, instance->numberOfTokens);
         if (currentRepetition >= instance->numberOfTokens){
-            // TODO: Success
-            break;
+            DBG("Reached a match...\n");
+            // TODO: return the MatchResult
+            MatchResult* result = (MatchResult*) malloc(sizeof(MatchResult));
+            result->length = latestToken;
+            result->variableBindings = NULL;
+            return result;
         }
         
     }
@@ -454,15 +517,17 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
 
 // Attempt to match this clause to an array of strings
 // If no match is possible, return NULL
-MatchResult* Clause_match(Clause* instance, char** tokens, int numberOfTokens){
+MatchResult* Clause_match(Clause* instance, char** tokens, int numberOfTokens, int startOffset){
     DBG("Attempting to match clause to tokens...\n");
     // perform pattern matching using the Matcher
     MatchResult* result;
 
     // for a match to happen, every one of the matcher's tokens should match with the input
-    for (int i=0; i<numberOfTokens; i++){
+    for (int i=startOffset; i<numberOfTokens; i++){
         result = Clause_matchHelper(instance, tokens+i, numberOfTokens-1);
         if (result != NULL){
+            DBG("This clause has a match...\n");
+            result->offset = i;
             return result;
         }
     }

@@ -81,26 +81,35 @@ Engine* Engine_init(int numberOfDatabaseFiles, char** databaseFilenames){
 // metric = index of the metric to minimize/maximize
 // direction = positive or negative for whether to minimize or maximize
 // return an array of strings. (last element is NULL)
-char** Engine_execute(Engine* instance, char** tokens, int numberOfTokens, int metric, int direction){
+char** Engine_execute(Engine* instance, char** tokens, int numberOfTokens, int metric, int direction, int* newLength){
+    DBG("---------------------------------------------------\n");
     DBG("Executing Engine on an array of strings...\n");
     char** result = tokens;
+
+    int initialLength = numberOfTokens;
 
     int substitutionsMade;
     int totalSubstitutions = 0;
     // do not stop until no substitutions were made on a pass
+    int currentPass = 1;
     do {
+        DBG("+++++++++++++++++++++++++\n");
+        DBG("Current Pass: %d\n", currentPass);
         substitutionsMade = 0;
         // iterate through the array of rules in order
         for (int i=0; i<instance->numberOfCompiledRules; i++){
             int substitutions = 0;
-            DBG("Executing rule %d/%d...\n", i+1, instance->numberOfCompiledRules);
-            result = Rule_execute(instance->compiledRules[i], result, numberOfTokens, metric, direction, &substitutions, &numberOfTokens);
+            DBG("Executing rule %d/%d... ##############\n", i+1, instance->numberOfCompiledRules);
+            result = Rule_execute(instance->compiledRules[i], result, numberOfTokens, metric, direction, &substitutions, &numberOfTokens, 0);
             substitutionsMade += substitutions;
             totalSubstitutions += substitutions;
         }
+        currentPass++;
     } while (substitutionsMade != 0);
 
-    DBG("Engine execution finished! (%d total subsittutions made)\n", totalSubstitutions);
+    *newLength = numberOfTokens;
+    DBG("Engine execution finished! (%d total substitutions made)\n", totalSubstitutions);
+    DBG("Number of tokens: %d -> %d\n", initialLength, numberOfTokens);
     return result;
 }
 

@@ -92,7 +92,8 @@ int main(int argc, char** argv){
     testTokens[4] = "you?";
     int numberOfTokens = 5;
 
-    char** result = Engine_execute(engine, testTokens, numberOfTokens, 0, -1);
+    int newLength;
+    char** result = Engine_execute(engine, testTokens, numberOfTokens, 0, -1, &newLength);
 
     /*
     DBG("\nRESULT:");
