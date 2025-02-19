@@ -8,5 +8,7 @@
 // initialize a new Engine
 Engine* Engine_init(int numberOfDatabaseFiles, char** databaseFilenames);
 
+// execute the engine on an array of strings
+char** Engine_execute(Engine* instance, char** tokens, int numberOfTokens, int metric, int direction);
 
 #endif

@@ -11,10 +11,10 @@ It should have the following syntax:
     <token1>|<token2> - matches token1 or token2
     <token>{<num1>,<num2>} - the token must be matched <num1> to <num2> times
     <token>$<varnum> - the token will be bound to the varnum
-    #<token> - 
+    #<token> - internal variable. Will be changed to #<currentInternalVariable> by the program
 
     This is the default functionality of these tokens. To escape this functionality, prepend a backslash:
-        [".", "+", "*", "|", "{", "}", '"']
+        [".", "+", "*", "|", "{", "$", "#", '"']
     
 The rule database should be made of Rules
     Each Rule is made up of Clauses
@@ -81,6 +81,28 @@ int main(int argc, char** argv){
 
     DBG("Creating Engine...\n");
     Engine* engine = Engine_init(numberOfDatabaseFiles, databaseFilenames);
+
+    DBG("Rule Based Engine is fully initialized!\n");
+
+    char* testTokens[5];
+    testTokens[0] = "Hello";
+    testTokens[1] = "World";
+    testTokens[2] = "how";
+    testTokens[3] = "are";
+    testTokens[4] = "you?";
+    int numberOfTokens = 5;
+
+    char** result = Engine_execute(engine, testTokens, numberOfTokens, 0, -1);
+
+    /*
+    DBG("\nRESULT:");
+    int i = 0;
+    while (result[i] != NULL){
+        DBG("%s ", result[i]);
+        i++;
+    }
+    DBG("\n");
+    */
 
 
     return 0;

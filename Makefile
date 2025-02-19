@@ -1,7 +1,7 @@
 
 CC :=gcc
 CFLAGS :=-O3
-OBJECTS :=main.o engine.o database.o
+OBJECTS :=main.o engine.o database.o rule.o clause.o
 BIN :=main
 
 test: install
