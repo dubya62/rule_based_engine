@@ -7,7 +7,7 @@ typedef struct MatchResult{
 
     // TODO: handle variable bindings
     int numberOfVariables;
-    int** variableBindingLengths; // number of Variables length
+    int* variableBindingLengths; // number of Variables length
     char*** variableBindings; // number of Variables length of variableBindings length
 } MatchResult;
 

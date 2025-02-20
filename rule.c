@@ -131,20 +131,70 @@ int Rule_cacheBestMetrics(Rule* instance){
 // TODO: make this replace the variables and such
 char** createReplacementString(MatchResult* matchResult, Clause* matchedClause, char** tokens, int numberOfTokens, Clause* bestClause, int* resultLength){
 
-    // check the variable bindings to see how large each is
-    for (int i=0; i < matchedClause->numberOfTokens; i++){
-
+    DBG("Creating replacement String\n");
+    DBG("numberOfVariables = %d\n", matchResult->numberOfVariables);
+    for (int i=0; i<matchResult->numberOfVariables; i++){
+        DBG("\tvariable binding length = %d\n", matchResult->variableBindingLengths[i]);
+        DBG("\t\t");
+        for (int j=0; j<matchResult->variableBindingLengths[i]; j++){
+            DBG("%s, ", matchResult->variableBindings[i][j]);
+        }
+        DBG("\n");
     }
 
+    // check the variable bindings to see how large each is
     int replacementLength = 0;
+    for (int i=0; i<bestClause->numberOfTokens; i++){
+        int variableAccess = bestClause->matcher->variableAccesses[i];
+        if (variableAccess != -1){
+            // TODO: get the length of the variable binding
+            if (matchResult->numberOfVariables > variableAccess){
+                if (matchResult->variableBindingLengths[variableAccess] != -1){
+                    replacementLength += matchResult->variableBindingLengths[variableAccess];
+                }
+            }
+        } else {
+            replacementLength++;
+        }
+    }
+
+    DBG("Replacment's length = %d\n", replacementLength);
+
+
 
     char** replacement = (char**) malloc(sizeof(char*) * replacementLength);
     *resultLength = replacementLength;
 
+    DBG("Creating replacement string...\n");
+    int replacementIndex = 0;
+    for (int i=0; i<bestClause->numberOfTokens; i++){
+        // replace with variable value
+        int variableAccess = bestClause->matcher->variableAccesses[i];
+        DBG("%d: variableAccess = %d\n", i, variableAccess);
+        if (variableAccess != -1){
+            DBG("This is bound to a variable...\n");
+            if (matchResult->numberOfVariables > variableAccess){
+                DBG("Length of binding: %d\n", matchResult->variableBindingLengths[variableAccess]);
+                if (matchResult->variableBindingLengths[variableAccess] > 0){
+                    for (int j=0; j < matchResult->variableBindingLengths[variableAccess]; j++){
+                        replacement[replacementIndex] = matchResult->variableBindings[variableAccess][j];
+                        replacementIndex++;
+                    }
+                }
+            }
+        } else {
+            DBG("Not bound to variable...\n");
+            replacement[replacementIndex] = bestClause->tokens[i];
+            replacementIndex++;
+        }
+    }
+
+    DBG("Finished creating replacement string.\n");
 
 
 
-    return NULL;
+
+    return replacement;
 }
 
 
@@ -224,11 +274,11 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
 
         int currentSpot = 0;
         for (int j=0; j<matchResult->offset; j++){
-            substituted[j] = tokens[j];
+            substituted[currentSpot] = tokens[j];
             currentSpot++;
         }
         for (int j=0; j<replacementLength; j++){
-            substituted[j+matchResult->offset] = replacementString[j];
+            substituted[currentSpot] = replacementString[j];
             currentSpot++;
         }
         for (int j=matchResult->offset + matchResult->length; j<numberOfTokens; j++){
@@ -236,7 +286,14 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
             currentSpot++;
         }
 
-        return Rule_execute(instance, result, newLength, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
+        DBG("New tokens:\n\t");
+        for (int j=0; j<newLength; j++){
+            DBG("%s, ", substituted[j]);
+        }
+        DBG("\n");
+
+
+        return Rule_execute(instance, substituted, newLength, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
     }
     
     *newNumberOfTokens = numberOfTokens;

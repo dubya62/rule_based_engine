@@ -502,10 +502,41 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
         DBG("Child index: %d\tNumber of tokens: %d\n", currentRepetition, instance->numberOfTokens);
         if (currentRepetition >= instance->numberOfTokens){
             DBG("Reached a match...\n");
-            // TODO: return the MatchResult
             MatchResult* result = (MatchResult*) malloc(sizeof(MatchResult));
             result->length = latestToken;
-            result->variableBindings = NULL;
+
+            int lastVariable = 0;
+            for (int i=0; i<instance->numberOfTokens; i++){
+                if (matcher->variableAccesses[i] > lastVariable){
+                    lastVariable = matcher->variableAccesses[i];
+                }
+            }
+
+            result->numberOfVariables = lastVariable+1;
+            result->variableBindingLengths = (int*) malloc(sizeof(int) * result->numberOfVariables);
+            result->variableBindings = (char***) malloc(sizeof(char**) * result->numberOfVariables);
+
+            for (int i=0; i<result->numberOfVariables; i++){
+                result->variableBindingLengths[i] = -1;
+            }
+
+            DBG("Binding variables...\n")
+            int matchOffset = 0;
+            for (int i=0; i<instance->numberOfTokens; i++){
+                if (matcher->variableAccesses[i] != -1 && repetitions[i] > 0){
+                    DBG("Found variable (%d) that needs binding (index = %d, repetitions = %d, matchOffset = %d)...\n", matcher->variableAccesses[i], i, repetitions[i], matchOffset);
+                    result->variableBindingLengths[matcher->variableAccesses[i]] = repetitions[i];
+                    result->variableBindings[matcher->variableAccesses[i]] = (char**) malloc(sizeof(char*) * repetitions[i]);
+                    // TODO: actually save the string values as bindings
+                    DBG("Saving the binding...\n");
+                    for (int j=0; j<repetitions[i]; j++){
+                        DBG("Added %s to binding.\n", instance->tokens[matchOffset+j]);
+                        result->variableBindings[matcher->variableAccesses[i]][j] = tokens[matchOffset+j];
+                    }
+                }
+                matchOffset += repetitions[i];
+            }
+
             return result;
         }
         

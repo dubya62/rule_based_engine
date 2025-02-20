@@ -52,7 +52,7 @@ int printUsage(){
 
 int parseCliArgs(int argc, char** argv){
     if (argc < 2){
-        perror("Not enough args supplied.\n");
+        printf("Not enough args supplied.\n");
         printUsage();
         return 1;
     }
@@ -95,15 +95,11 @@ int main(int argc, char** argv){
     int newLength;
     char** result = Engine_execute(engine, testTokens, numberOfTokens, 0, -1, &newLength);
 
-    /*
-    DBG("\nRESULT:");
-    int i = 0;
-    while (result[i] != NULL){
-        DBG("%s ", result[i]);
-        i++;
+    DBG("FINAL RESULT:\n");
+    for (int i=0; i<newLength; i++){
+        printf("%s ", result[i]);
     }
-    DBG("\n");
-    */
+    printf("\n");
 
 
     return 0;
