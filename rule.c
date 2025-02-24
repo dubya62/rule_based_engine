@@ -198,7 +198,7 @@ char** createReplacementString(MatchResult* matchResult, Clause* matchedClause, 
 }
 
 
-char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metric, int direction, int* substitutions, int* newNumberOfTokens, int startOffset){
+char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metric, int direction, int* substitutions, int* newNumberOfTokens, int startOffset, int startingClause){
     char** result = tokens;
 
     if (metric >= instance->numberOfMetrics){
@@ -216,7 +216,9 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
 
     DBG("Attempting to match tokens against each clause...\n");
     // try to match the instance against each clause until a match is found
-    for (int i=0; i<instance->numberOfClauses; i++){
+    
+    for (int i=startingClause; i<instance->numberOfClauses; i++){
+        DBG("Attempting to match with clause %d\n", i);
     
         // need to get the offset, variable bindings, length
         MatchResult* matchResult = Clause_match(instance->clauses[i], tokens, numberOfTokens, startOffset);
@@ -238,7 +240,7 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
         if (bestClause == i){
             DBG("Already at the best clause... No substitution needed.\n");
             *newNumberOfTokens = numberOfTokens;
-            return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
+            return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length, i+1);
         }
 
         // make sure the best metric is actually better
@@ -246,13 +248,13 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
             if (instance->clauses[i]->numberOfMetrics > i && instance->clauses[bestClause]->metrics[metric] > instance->clauses[i]->metrics[metric]){
                 DBG("Already at best clause... No substitution needed.\n");
                 *newNumberOfTokens = numberOfTokens;
-                return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
+                return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length, i+1);
             }
         } else {
             if (instance->clauses[i]->numberOfMetrics > i && instance->clauses[bestClause]->metrics[metric] < instance->clauses[i]->metrics[metric]){
                 DBG("Already at best clause... No substitution needed.\n");
                 *newNumberOfTokens = numberOfTokens;
-                return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
+                return Rule_execute(instance, result, numberOfTokens, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length, i+1);
             }
         }
 
@@ -293,7 +295,7 @@ char** Rule_execute(Rule* instance, char** tokens, int numberOfTokens, int metri
         DBG("\n");
 
 
-        return Rule_execute(instance, substituted, newLength, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length);
+        return Rule_execute(instance, substituted, newLength, metric, direction, substitutions, newNumberOfTokens, matchResult->offset + matchResult->length, 0);
     }
     
     *newNumberOfTokens = numberOfTokens;

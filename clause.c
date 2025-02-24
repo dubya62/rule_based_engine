@@ -453,10 +453,12 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
         DBG("latestToken: %d\n", latestToken);
         while (repetitions[currentRepetition] < matcher->minRepetitions[currentRepetition]){
             do {
-                DBG("latestToken: %d\n", latestToken);
-                DBG("tokenMatchs(matcher, %s, %d)\n", tokens[latestToken], currentRepetition);
+                DBG("latestToken: %d\tnumberOfTokens: %d\n", latestToken, numberOfTokens);
+                if (latestToken < numberOfTokens){
+                    DBG("tokenMatches(matcher, %s, %d)\n", tokens[latestToken], currentRepetition);
+                }
                 wentBack = 0;
-                if (!tokenMatches(matcher, tokens[latestToken], currentRepetition)){
+                if (latestToken >= numberOfTokens || !tokenMatches(matcher, tokens[latestToken], currentRepetition)){
                     DBG("Going back to the previous repetition...\n");
 
                     latestToken -= repetitions[currentRepetition];
@@ -499,14 +501,14 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
         // we have made it to the minimum. go to the child and restart the process for it
         DBG("Moving to child...\n");
         currentRepetition++;
-        DBG("Child index: %d\tNumber of tokens: %d\n", currentRepetition, instance->numberOfTokens);
+        DBG("Child index: %d\tNumber of tokens: %d\n", currentRepetition, numberOfTokens);
         if (currentRepetition >= instance->numberOfTokens){
             DBG("Reached a match...\n");
             MatchResult* result = (MatchResult*) malloc(sizeof(MatchResult));
             result->length = latestToken;
 
             int lastVariable = 0;
-            for (int i=0; i<instance->numberOfTokens; i++){
+            for (int i=0; i<numberOfTokens; i++){
                 if (matcher->variableAccesses[i] > lastVariable){
                     lastVariable = matcher->variableAccesses[i];
                 }
@@ -527,7 +529,6 @@ MatchResult* Clause_matchHelper(Clause* instance, char** tokens, int numberOfTok
                     DBG("Found variable (%d) that needs binding (index = %d, repetitions = %d, matchOffset = %d)...\n", matcher->variableAccesses[i], i, repetitions[i], matchOffset);
                     result->variableBindingLengths[matcher->variableAccesses[i]] = repetitions[i];
                     result->variableBindings[matcher->variableAccesses[i]] = (char**) malloc(sizeof(char*) * repetitions[i]);
-                    // TODO: actually save the string values as bindings
                     DBG("Saving the binding...\n");
                     for (int j=0; j<repetitions[i]; j++){
                         DBG("Added %s to binding.\n", instance->tokens[matchOffset+j]);
@@ -555,7 +556,8 @@ MatchResult* Clause_match(Clause* instance, char** tokens, int numberOfTokens, i
 
     // for a match to happen, every one of the matcher's tokens should match with the input
     for (int i=startOffset; i<numberOfTokens; i++){
-        result = Clause_matchHelper(instance, tokens+i, numberOfTokens-1);
+        DBG("Attempt at offset %d (length = %d)\n", i, numberOfTokens-i);
+        result = Clause_matchHelper(instance, tokens+i, numberOfTokens-i);
         if (result != NULL){
             DBG("This clause has a match...\n");
             result->offset = i;

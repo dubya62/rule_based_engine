@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG 1
+#define DEBUG 0
 #define DBG(...) if(DEBUG){ printf(__VA_ARGS__);}
 #define PANIC(...) {fprintf(stderr, __VA_ARGS__); exit(1);}
 

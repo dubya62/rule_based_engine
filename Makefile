@@ -6,7 +6,7 @@ BIN :=main
 
 test: install
 	clear
-	@./$(BIN) test.rbe test2.rbe
+	@./$(BIN) 0 -1 test.rbe test2.rbe
 
 install: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $(BIN) $(OBJECTS)

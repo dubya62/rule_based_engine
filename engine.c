@@ -100,7 +100,7 @@ char** Engine_execute(Engine* instance, char** tokens, int numberOfTokens, int m
         for (int i=0; i<instance->numberOfCompiledRules; i++){
             int substitutions = 0;
             DBG("Executing rule %d/%d... ##############\n", i+1, instance->numberOfCompiledRules);
-            result = Rule_execute(instance->compiledRules[i], result, numberOfTokens, metric, direction, &substitutions, &numberOfTokens, 0);
+            result = Rule_execute(instance->compiledRules[i], result, numberOfTokens, metric, direction, &substitutions, &numberOfTokens, 0, 0);
             substitutionsMade += substitutions;
             totalSubstitutions += substitutions;
         }
@@ -108,7 +108,7 @@ char** Engine_execute(Engine* instance, char** tokens, int numberOfTokens, int m
     } while (substitutionsMade != 0);
 
     *newLength = numberOfTokens;
-    DBG("Engine execution finished! (%d total substitutions made)\n", totalSubstitutions);
+    DBG("Engine execution finished! (%d total substitutions made, %d passes)\n", totalSubstitutions, currentPass-1);
     DBG("Number of tokens: %d -> %d\n", initialLength, numberOfTokens);
     return result;
 }

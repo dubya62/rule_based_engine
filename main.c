@@ -32,6 +32,7 @@ The rule database should be made of Rules
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 #include "structures.h"
@@ -41,27 +42,48 @@ The rule database should be made of Rules
 int numberOfDatabaseFiles;
 char** databaseFilenames;
 
+int cliMetric;
+int cliDirection;
+
 
 int printUsage(){
     printf("Usage:\n");
-    printf("\t./rbe <rule_database1> <rule_database2> ... <rule_databaseN>\n");
+    printf("\t./rbe <metric> <direction> <rule_database1> <rule_database2> ... <rule_databaseN>\n");
 
     return 0;
 }
 
 
 int parseCliArgs(int argc, char** argv){
-    if (argc < 2){
+    if (argc < 4){
         printf("Not enough args supplied.\n");
         printUsage();
         return 1;
     }
 
-    numberOfDatabaseFiles = argc - 1;
+    numberOfDatabaseFiles = argc - 3;
     databaseFilenames = (char**) malloc(sizeof(char*) * numberOfDatabaseFiles);
 
-    for (int i=1; i<argc; i++){
-        databaseFilenames[i-1] = argv[i];
+    cliMetric = atoi(argv[1]);
+    if (cliMetric < 0){
+        printf("Metric must be a non-negative integer.\n");
+        printUsage();
+        return 1;
+    }
+
+    cliDirection = atoi(argv[2]);
+    switch(cliDirection){
+        case -1:
+        case 1:
+            break;
+        default:
+            printf("Direction must be either -1 or 1.\n");
+            printUsage();
+            return 1;
+    }
+
+    for (int i=3; i<argc; i++){
+        databaseFilenames[i-3] = argv[i];
         DBG("Database file added: %s\n", argv[i]);
     }
 
@@ -84,23 +106,76 @@ int main(int argc, char** argv){
 
     DBG("Rule Based Engine is fully initialized!\n");
 
-    char* testTokens[5];
-    testTokens[0] = "Hello";
-    testTokens[1] = "World";
-    testTokens[2] = "how";
-    testTokens[3] = "are";
-    testTokens[4] = "you?";
-    int numberOfTokens = 5;
+    DBG("Awaiting input tokens...\n");
 
-    int newLength;
-    char** result = Engine_execute(engine, testTokens, numberOfTokens, 0, -1, &newLength);
 
-    DBG("FINAL RESULT:\n");
-    for (int i=0; i<newLength; i++){
-        printf("%s ", result[i]);
+    while (1){
+        char* line = NULL;
+        size_t lineLength;
+
+        size_t bytesRead = getline(&line, &lineLength, stdin);
+
+        // EOF reached
+        if (bytesRead == -1){
+            free(line);
+            return 0;
+        }
+
+        if (bytesRead > 0){
+            line[bytesRead - 1]  = '\0';
+        }
+
+        // break the line up into tokens at spaces
+        int numberOfInputTokens = 1;
+        char** inputTokens;
+        for (int i=0; i<bytesRead; i++){
+            if (line[i] == ' '){
+                numberOfInputTokens++;
+            }
+        }
+
+        inputTokens = (char**) malloc(sizeof(char*) * numberOfInputTokens);
+
+        DBG("Received input. Parsing...\n");
+        DBG("Input:\n%s\n", line);
+        DBG("Parsing into %d tokens\n", numberOfInputTokens);
+
+        int tokenStart = 0;
+        int currentInputToken = 0;
+        for (int i=0; i<bytesRead; i++){
+            if (line[i] == ' '){
+                int tokenLength = i - tokenStart;
+                inputTokens[currentInputToken] = (char*) malloc(sizeof(char) * (tokenLength + 1));
+
+                strncpy(inputTokens[currentInputToken], line+tokenStart, tokenLength);
+                inputTokens[currentInputToken][tokenLength] = '\0';
+
+                tokenStart = i + 1;
+                currentInputToken++;
+            }
+        }
+        int tokenLength = bytesRead - tokenStart;
+        inputTokens[currentInputToken] = (char*) malloc(sizeof(char) * (tokenLength + 1));
+
+        strncpy(inputTokens[currentInputToken], line+tokenStart, tokenLength);
+        inputTokens[currentInputToken][tokenLength] = '\0';
+
+        
+        DBG("Executing engine on input...\n");
+
+        int newLength;
+        char** result = Engine_execute(engine, inputTokens, numberOfInputTokens, cliMetric, cliDirection, &newLength);
+
+        DBG("FINAL RESULT:\n");
+        for (int i=0; i<newLength; i++){
+            printf("%s ", result[i]);
+        }
+        printf("\n");
+
+        fflush(stdout);
+        free(line);
+        free(inputTokens);
     }
-    printf("\n");
-
 
     return 0;
 }
