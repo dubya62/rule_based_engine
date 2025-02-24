@@ -1,8 +1,8 @@
 
 CC :=gcc
 CFLAGS :=-O3
-OBJECTS :=main.o engine.o database.o rule.o clause.o
-BIN :=main
+OBJECTS :=rbe.o engine.o database.o rule.o clause.o
+BIN :=rbe
 
 test: install
 	clear
