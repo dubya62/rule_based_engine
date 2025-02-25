@@ -46,13 +46,28 @@ int Database_parse(Database* instance, FILE* fp){
 
     // separate the file at semicolons and parse each section as a rule
     int ruleStart = 0;
+    int insideRule = 0;
+    int insideComment = 0;
+    int backslashes = 0;
     for (int i=0; i<fileLength; i++){
-        if (fileString[i] == ';'){
+        if (fileString[i] == '"' && !insideComment && backslashes % 2 == 0){
+            insideRule ^= 1;
+        } else if (fileString[i] == '#' && !insideRule){
+            insideComment = 1;
+        } else if (fileString[i] == '\n'){
+            insideComment = 0;
+        } else if (fileString[i] == '\\'){
+            backslashes++;
+        } else if (fileString[i] == ';' && !insideRule){
             fileString[i] = '\0';
             numberOfRules++;
             rules = realloc(rules, sizeof(Rule*) * numberOfRules);
             rules[numberOfRules-1] = Rule_init(fileString+ruleStart);
             ruleStart = i + 1;
+        }
+
+        if (fileString[i] != '\\'){
+            backslashes = 0;
         }
     }
 

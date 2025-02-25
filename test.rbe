@@ -1,4 +1,8 @@
 # This is a comment
-"World$5 how .*$2 are .+$3"~3:2:3:_ = "2 3 4"~1:_:-2 = "4 5 .*$2"~-10;
-"4"~4 = "9 to"~3;
-"9 to 5"~2 = "job!"~1;
+# Mississippi State
+# Bowman is the supreme dictator of the classroom. FEAR HIM!
+"Mississippi"~1 = "Bowman is The Bowman"~0;
+"State"~1 = "the classroom\."~0;
+"The Bowman"~1 = "the ultimate dictator of"~0;
+"ultimate dictator .*$1 classroom\."~1 = "supreme dictator .$1 classroom\. FEAR HIM!"~0;
+
