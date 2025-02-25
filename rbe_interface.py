@@ -5,9 +5,11 @@ and provide simple functions that allow interfacing with it using python
 
 import subprocess
 
+RBE_BINARY = "./rbe"
+
 def start_process(database_files:list[str], metric, direction):
 
-    invocation = ["./main", metric, direction]
+    invocation = ["./rbe", metric, direction]
     for file in database_files:
         invocation.append(file)
 
